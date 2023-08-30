@@ -123,7 +123,6 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
   @override
   void initState() {
     widget.controller._cropCallback = _crop;
-    widget.controller.addListener(_reCenterImage);
 
     //Setup animation.
     _controller = AnimationController(
@@ -133,87 +132,9 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
 
     _animation = CurvedAnimation(curve: Curves.easeInOut, parent: _controller);
     _animation.addListener(() {
-      if (_animation.isCompleted) {
-        _reCenterImage(false);
-      }
       setState(() {});
     });
     super.initState();
-  }
-
-  void _reCenterImage([bool animate = true]) {
-    //final totalSize = _parent.currentContext.size;
-
-    final sz = _key.currentContext!.size!;
-    final s = widget.controller._scale * widget.controller._getMinScale();
-    final w = sz.width;
-    final h = sz.height;
-    final offset = _toVector2(widget.controller._offset);
-    final canvas = Rectangle.fromLTWH(0, 0, w, h);
-    final obb = Obb2(
-      center: offset + canvas.center,
-      width: w * s,
-      height: h * s,
-      rotation: widget.controller._rotation,
-    );
-
-    final bakedObb = obb.bake();
-
-    _startOffset = widget.controller._offset;
-    _endOffset = widget.controller._offset;
-
-    final ctl = canvas.topLeft;
-    final ctr = canvas.topRight;
-    final cbr = canvas.bottomRight;
-    final cbl = canvas.bottomLeft;
-
-    final ll = Line(bakedObb.topLeft, bakedObb.bottomLeft);
-    final tt = Line(bakedObb.topRight, bakedObb.topLeft);
-    final rr = Line(bakedObb.bottomRight, bakedObb.topRight);
-    final bb = Line(bakedObb.bottomLeft, bakedObb.bottomRight);
-
-    final tl = ll.project(ctl);
-    final tr = tt.project(ctr);
-    final br = rr.project(cbr);
-    final bl = bb.project(cbl);
-
-    final dtl = ll.distanceToPoint(ctl);
-    final dtr = tt.distanceToPoint(ctr);
-    final dbr = rr.distanceToPoint(cbr);
-    final dbl = bb.distanceToPoint(cbl);
-
-    if (dtl > 0) {
-      final d = _toOffset(ctl - tl);
-      _endOffset += d;
-    }
-
-    if (dtr > 0) {
-      final d = _toOffset(ctr - tr);
-      _endOffset += d;
-    }
-
-    if (dbr > 0) {
-      final d = _toOffset(cbr - br);
-      _endOffset += d;
-    }
-    if (dbl > 0) {
-      final d = _toOffset(cbl - bl);
-      _endOffset += d;
-    }
-
-    widget.controller._offset = _endOffset;
-
-    if (animate) {
-      if (_controller.isCompleted || _controller.isAnimating) {
-        _controller.reset();
-      }
-      _controller.forward();
-    } else {
-      _startOffset = _endOffset;
-    }
-
-    setState(() {});
-    _handleOnChanged();
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
@@ -338,7 +259,6 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
       onScaleEnd: (details) {
         widget.controller._scale = max(widget.controller._scale, 1);
         _previousPointerCount = 0;
-        _reCenterImage();
       },
     );
 
@@ -374,7 +294,6 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
   @override
   void dispose() {
     _controller.dispose();
-    widget.controller.removeListener(_reCenterImage);
     super.dispose();
   }
 }
