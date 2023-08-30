@@ -134,7 +134,7 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
   @override
   void initState() {
     widget.controller._cropCallback = _crop;
-    if(widget.recenterImage){widget.controller.addListener(_reCenterImage);}
+    widget.controller.addListener(_updateImage);
 
     //Setup animation.
     _controller = AnimationController(
@@ -144,12 +144,19 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
 
     _animation = CurvedAnimation(curve: Curves.easeInOut, parent: _controller);
     _animation.addListener(() {
-      if (_animation.isCompleted && widget.recenterImage) {
-        _reCenterImage(false);
+      if (_animation.isCompleted ) {
+        _updateImage(false);
       }
       setState(() {});
     });
     super.initState();
+  }
+  void _updateImage([bool animate = true]){
+    if(widget.recenterImage){
+      _reCenterImage();
+    }
+    setState(() {});
+    _handleOnChanged();
   }
 
   void _reCenterImage([bool animate = true]) {
@@ -349,7 +356,7 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
       onScaleEnd: (details) {
         widget.controller._scale = max(widget.controller._scale, 1);
         _previousPointerCount = 0;
-        if(widget.recenterImage){_reCenterImage();}
+       _updateImage();
       },
     );
 
@@ -385,7 +392,7 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
   @override
   void dispose() {
     _controller.dispose();
-    if(widget.recenterImage){widget.controller.removeListener(_reCenterImage);}
+    if(widget.recenterImage){widget.controller.removeListener(_updateImage);}
     super.dispose();
   }
 }
